@@ -1,9 +1,38 @@
-﻿<!DOCTYPE html>
-<html>
-<head>
-    <title>@ViewBag.Title</title>
-</head>
-<body>
-    <h1>Hello Razor!</h1>
-</body>
-</html>
+﻿@model IEnumerable<Person>
+@{ 
+    ViewBag.Title = "Hello Razor";
+}
+
+<div id="grid"></div>
+
+<script>
+
+    $(document).ready(function () {
+        var data = @(Json.Serialize(Model));
+
+        $("#grid").kendoGrid({
+            dataSource: {
+                data: data,
+                schema: {
+                    model: {
+                        fields: {
+                            id: { type: "number" },
+                            firstName: { type: "string" },
+                            lastName: { type: "string" }
+                        }
+                    }
+                }
+            },
+            scrollable: true,
+            sortable: true,
+            filterable: true,
+            editable: false,
+            columns: [
+                "id",
+                { field: "firstName", title: "First Name" },
+                { field: "lastName", title: "Last Name" }
+            ]
+        });
+    })
+
+</script>

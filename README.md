@@ -48,6 +48,8 @@ namespace Health.Web
                 app.UseDeveloperExceptionPage();
             }
 
+            app.UseStaticFiles();
+
             /*
              Shortcut per:
 
@@ -124,6 +126,180 @@ namespace Health.Web.Controllers
 </html>
 ```
 
+# Layout
+1. Creare il folder Shared all'interno di Views
+2. Click con il tasto destro su Shared > Add > New Item...
+3. Filtrare per "layout" e scegliere quindi "Razor Layout" lasciando il nome di default _Layout.cshtml
+4. Modificare il file HomeController come segue:
+
+```csharp
+using Microsoft.AspNetCore.Mvc;
+
+namespace Health.Web.Controllers
+{
+    public class HomeController : Controller
+    {
+        public IActionResult Index() => View();
+    }
+}
+```
+
+5. Modificare il file Views/Home/Index.cshtml come segue:
+
+```csharp
+@{ 
+    ViewBag.Title = "Hello Razor";
+}
+
+<h1>Hello Razor!</h1>
+```
+
+6. Tasto destro sul folder Views > Add > New Item...; filtrare per "razor" e sceglier "Razor View Start"
+7. Lanciare e osservare il risultato.
+
+# Model
+1. Aggiungere il folder Models a pari livello di Controllers e Views
+2. Aggiungere nel folder Models il file Person.cs 
+
+```csharp
+namespace Health.Web.Models
+{
+    public class Person
+    {
+        public int Id { get; set; }
+
+        public string FirstName { get; set; }
+
+        public string LastName { get; set; }
+    }
+}
+```
+
+3. Tasto destro su Views > Add > New Item...; filtrare per "razor" e scegliere "Razor View Imports"; nel file così creato aggiungere:
+
+```csharp
+@using Health.Web.Models
+```
+
+4. Modificare HomeController.cs come segue:
+
+```csharp
+using Health.Web.Models;
+using Microsoft.AspNetCore.Mvc;
+
+namespace Health.Web.Controllers
+{
+    public class HomeController : Controller
+    {
+        public IActionResult Index()
+        {
+            var model = new[]
+            {
+                new Person { Id = 1, FirstName = "John", LastName = "Smith" },
+                new Person { Id = 2, FirstName = "Jim", LastName = "Gordon" },
+            };
+
+            return View(model);
+        }
+    }
+}
+```
+
+5. Modificare il file Home/Index.cshtml
+
+```csharp
+@model IEnumerable<Person>
+@{ 
+    ViewBag.Title = "Hello Razor";
+}
+
+<table border="1">
+    @foreach (var p in Model)
+    {
+    <tr>
+        <td>@p.Id</td>    
+        <td>@p.FirstName</td>
+        <td>@p.LastName</td>
+    </tr>
+    }
+</table>
+```
+
+# Kendo UI
+1. Creare il folder kendo all'interno di wwwroot
+2. Copiare i folder js e styles dalla directory di Kendo al folder wwwroot/kendo del progetto
+3. Modificare il file Views/Shared/_Layout.cshtml come segue:
+
+```csharp
+<!DOCTYPE html>
+<html>
+<head>
+    <title>@ViewBag.Title</title>
+
+    <link href="//fonts.googleapis.com/css?family=Open+Sans:400,300,600,700&subset=all" rel="stylesheet" type="text/css" />
+
+    <link href="~/kendo/styles/kendo.common.min.css" rel="stylesheet" />
+    <link href="~/kendo/styles/kendo.material.min.css" rel="stylesheet" />
+
+    <script src="~/kendo/js/jquery.min.js"></script>
+    <script src="~/kendo/js/kendo.all.min.js"></script>
+
+    <style>
+
+        html, body {
+            font-family: 'Open Sans', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+    </style>
+</head>
+<body>
+    @RenderBody()
+</body>
+</html>
+```
+
+4. Modificare il file Views/Home/Index.cshtml come segue:
+
+```csharp
+@model IEnumerable<Person>
+@{ 
+    ViewBag.Title = "Hello Razor";
+}
+
+<div id="grid"></div>
+
+<script>
+
+    $(document).ready(function () {
+        var data = @(Json.Serialize(Model));
+
+        $("#grid").kendoGrid({
+            dataSource: {
+                data: data,
+                schema: {
+                    model: {
+                        fields: {
+                            id: { type: "number" },
+                            firstName: { type: "string" },
+                            lastName: { type: "string" }
+                        }
+                    }
+                }
+            },
+            scrollable: true,
+            sortable: true,
+            filterable: true,
+            editable: false,
+            columns: [
+                "id",
+                { field: "firstName", title: "First Name" },
+                { field: "lastName", title: "Last Name" }
+            ]
+        });
+    })
+
+</script>
+```
 
 # Riferimenti
 * ASP.NET: https://docs.microsoft.com/en-us/aspnet/core/?view=aspnetcore-2.0

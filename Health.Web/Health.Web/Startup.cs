@@ -19,6 +19,8 @@ namespace Health.Web
                 app.UseDeveloperExceptionPage();
             }
 
+            app.UseStaticFiles();
+
             /*
              Shortcut per:
 

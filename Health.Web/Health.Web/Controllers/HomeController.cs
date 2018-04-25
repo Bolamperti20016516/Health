@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Health.Web.Models;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Health.Web.Controllers
 {
@@ -6,9 +7,13 @@ namespace Health.Web.Controllers
     {
         public IActionResult Index()
         {
-            ViewBag.Title = "Hello Razor";
+            var model = new[]
+            {
+                new Person { Id = 1, FirstName = "John", LastName = "Smith" },
+                new Person { Id = 2, FirstName = "Jim", LastName = "Gordon" },
+            };
 
-            return View();
+            return View(model);
         }
     }
 }
