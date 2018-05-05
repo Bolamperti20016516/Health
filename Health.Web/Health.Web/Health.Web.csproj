@@ -2,6 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp2.0</TargetFramework>
+    <Copyright>APPWEB @ 2017/2018</Copyright>
+    <Company>UPO</Company>
   </PropertyGroup>
 
   <ItemGroup>
@@ -16,6 +18,8 @@
 
   <ItemGroup>
     <Content Remove="wwwroot\kendo\**" />
+    <Content Remove="wwwroot\AdminLTE-2.4.3\**" />
+    <Content Remove="wwwroot\AdminLTE-2.4.3.zip" />
   </ItemGroup>
 
 </Project>

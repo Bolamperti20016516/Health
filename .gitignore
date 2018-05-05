@@ -260,3 +260,5 @@ paket-files/
 __pycache__/
 *.pyc
 /Health.Web/Health.Web/wwwroot/kendo
+/Health.Web/Health.Web/wwwroot/AdminLTE-2.4.3
+/Health.Web/Health.Web/wwwroot/AdminLTE-2.4.3.zip

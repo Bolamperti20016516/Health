@@ -1,6 +1,8 @@
-﻿@model IEnumerable<Person>
+﻿@model IEnumerable<Hearthbeat>
 @{ 
-    ViewBag.Title = "Hello Razor";
+    ViewBag.Title = "Home";
+    ViewBag.PageHeader = "Home Page";
+    ViewBag.Logo = ViewBag.LogoMini = "Health";
 }
 
 <div id="grid"></div>
@@ -17,8 +19,9 @@
                     model: {
                         fields: {
                             id: { type: "number" },
-                            firstName: { type: "string" },
-                            lastName: { type: "string" }
+                            deviceId: { type: "string" },
+                            timestamp: { type: "date" },
+                            value: { type: "number" }
                         }
                     }
                 }
@@ -29,8 +32,9 @@
             editable: false,
             columns: [
                 "id",
-                { field: "firstName", title: "First Name" },
-                { field: "lastName", title: "Last Name" }
+                { field: "deviceId", title: "Device" },
+                { field: "timestamp", title: "Date/Time", format: "{0:dd/MM/yyyy HH:mm:ss.fff}" },
+                { field: "value", title: "Hearthbeats" }
             ]
         });
     })
