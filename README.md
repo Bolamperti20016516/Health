@@ -161,14 +161,14 @@ namespace Health.Web.Controllers
 
 # Model
 1. Aggiungere il folder Models a pari livello di Controllers e Views
-2. Aggiungere nel folder Models il file Hearthbeat.cs 
+2. Aggiungere nel folder Models il file Heartbeat.cs 
 
 ```csharp
 using System;
 
 namespace Health.Web.Models
 {
-    public class Hearthbeat
+    public class Heartbeat
     {
         public long Id { get; set; }
 
@@ -213,7 +213,7 @@ namespace Health.Web.Controllers
             var model =
                 from i in Enumerable.Range(0, 10)
                 let deviceId = Devices[random.Next(2)]
-                select new Hearthbeat
+                select new Heartbeat
                 {
                     Id = i,
                     DeviceId = deviceId,
@@ -230,7 +230,7 @@ namespace Health.Web.Controllers
 5. Modificare il file Home/Index.cshtml
 
 ```csharp
-@model IEnumerable<Hearthbeat>
+@model IEnumerable<Heartbeat>
 @{
     ViewBag.Title = "Hello Razor";
 }
@@ -284,7 +284,7 @@ namespace Health.Web.Controllers
 4. Modificare il file Views/Home/Index.cshtml come segue:
 
 ```csharp
-@model IEnumerable<Hearthbeat>
+@model IEnumerable<Heartbeat>
 @{ 
     ViewBag.Title = "Hello Razor";
 }
@@ -318,7 +318,7 @@ namespace Health.Web.Controllers
                 "id",
                 { field: "deviceId", title: "Device" },
                 { field: "timestamp", title: "Date/Time", format: "{0:dd/MM/yyyy HH:mm:ss.fff}" },
-                { field: "value", title: "Hearthbeats" }
+                { field: "value", title: "Heartbeats" }
             ]
         });
     })
@@ -905,10 +905,143 @@ Assembly.GetEntryAssembly().GetCustomAttribute<AssemblyCompanyAttribute>()?.Comp
 > * Fare in modo che le property Skin e Layout di Theme siano vincolati ai soli valori previsti dal tema
 > * Fare in modo che la breadcrumb mostri dinamicamente Controller > Action
 > * Fare in modo che le voci del menù di sinistra siano caricate da un modello definito server-side (al momento una struttura dati in-memory costante)
+> * Aggiungere la possibilità di configurare in _appsettings.json_ il tema Kendo da utilizzare.
+
+# Servizi
+Sviluppiamo ora la parte di accesso ai dati (Create Read Update Delete) sotto forma di servizi.
+1. Referenziare i package _linq2db.Core_ e _Microsoft.Data.SQLite_
+2. Nel folder _Models_ aggiungere il file _IHasId.cs_:
+
+```csharp
+namespace Health.Web.Models
+{
+    public interface IHasId<T>
+    {
+        T Id { get; set; }
+    }
+}
+```
+
+3. Nel folder _Models_ aggiungere il file _FitbitDevice.cs_:
+
+```csharp
+using LinqToDB.Mapping;
+
+namespace Health.Web.Models
+{
+    public class FitbitDevice : IHasId<string>
+    {
+        [PrimaryKey]
+        [NotNull]
+        public string Id { get; set; }
+
+        public string AccountId { get; set; }
+    }
+}
+```
+
+4. Modificare il file _Heartbeat.cs_ nel seguente modo:
+
+```csharp
+using LinqToDB.Mapping;
+using System;
+
+namespace Health.Web.Models
+{
+    public class Heartbeat : IHasId<long>
+    {
+        [PrimaryKey]
+        [NotNull]
+        [Identity]
+        public long Id { get; set; }
+
+        public DateTime Timestamp { get; set; }
+
+        [NotNull]
+        public string DeviceId { get; set; }
+
+        [Association(ThisKey = nameof(DeviceId), OtherKey = nameof(FitbitDevice.Id), CanBeNull = false)]
+        public FitbitDevice Device { get; set; }
+
+        [NotNull]
+        public int Value { get; set; }
+    }
+}
+```
+
+5. Aggiungere il folder _Data_
+6. Aggiungere il file _IDataContextFactory.cs_ al folder _Data_:
+
+```csharp
+using LinqToDB.Data;
+
+namespace Health.Web
+{
+    public interface IDataContextFactory<T>
+        where T : DataConnection
+    {
+        T Create();
+    }
+}
+```
+
+7. Aggiungere il file _HealthDataContext.cs_ al folder _Data_:
+
+```csharp
+using Health.Web.Models;
+using LinqToDB;
+using LinqToDB.Data;
+using LinqToDB.DataProvider;
+
+namespace Health.Web.Data
+{
+    public class HealthDataContext : DataConnection
+    {
+        public HealthDataContext(IDataProvider dataProvider, string connectionString)
+            : base(dataProvider, connectionString)
+        { }
+
+        public ITable<FitbitDevice> FitbitDevices => GetTable<FitbitDevice>();
+
+        public ITable<Heartbeat> Heartbeats => GetTable<Heartbeat>();
+    }
+}
+```
+
+8. Aggiungere il file _HealthDataContextFactory.cs_ al folder _Data_:
+
+```csharp
+using LinqToDB.DataProvider;
+
+namespace Health.Web.Data
+{
+    public class HealthDataContextFactory : IDataContextFactory<HealthDataContext>
+    {
+        readonly IDataProvider dataProvider;
+
+        readonly string connectionString;
+
+        public HealthDataContextFactory(IDataProvider dataProvider, string connectionString)
+        {
+            this.dataProvider = dataProvider;
+            this.connectionString = connectionString;
+        }
+
+        public HealthDataContext Create() => new HealthDataContext(dataProvider, connectionString);
+    }
+}
+```
+
+9. Iniettare in _Startup.cs_ la dipendenza che consentirà di creare istanze di _HealthDataContext_:
+
+```csharp
+
+```
 
 # Riferimenti
 * ASP.NET: https://docs.microsoft.com/en-us/aspnet/core/?view=aspnetcore-2.0
 * Creazione di servizi REST: https://docs.microsoft.com/en-us/aspnet/core/tutorials/first-web-api?view=aspnetcore-2.0
+* REST: https://it.wikipedia.org/wiki/Representational_State_Transfer
 * Autenticazione: https://docs.microsoft.com/en-us/aspnet/core/security/authentication/?view=aspnetcore-2.0
 * Razor syntax reference: https://docs.microsoft.com/en-us/aspnet/core/mvc/views/razor?view=aspnetcore-2.0
 * Kendo UI book: http://codylindley.github.io/the-kendo-ui-book/

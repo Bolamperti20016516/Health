@@ -1,15 +1,24 @@
-﻿using System;
+﻿using LinqToDB.Mapping;
+using System;
 
 namespace Health.Web.Models
 {
-    public class Hearthbeat
+    public class Heartbeat : IHasId<long>
     {
+        [PrimaryKey]
+        [NotNull]
+        [Identity]
         public long Id { get; set; }
-
-        public string DeviceId { get; set; }
 
         public DateTime Timestamp { get; set; }
 
+        [NotNull]
+        public string DeviceId { get; set; }
+
+        [Association(ThisKey = nameof(DeviceId), OtherKey = nameof(FitbitDevice.Id), CanBeNull = false)]
+        public FitbitDevice Device { get; set; }
+
+        [NotNull]
         public int Value { get; set; }
     }
 }

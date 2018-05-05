@@ -21,7 +21,7 @@ namespace Health.Web.Controllers
             var model =
                 from i in Enumerable.Range(0, 10)
                 let deviceId = Devices[random.Next(2)]
-                select new Hearthbeat
+                select new Heartbeat
                 {
                     Id = i,
                     DeviceId = deviceId,
