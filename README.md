@@ -6,7 +6,7 @@
 Note: Provare a lanciare con IIS Express o direttamente, cambiare browser, avviare in debug mode o meno.
 
 # MVC setup
-MVC è disponibile sotto forma di package Nuget, occorre quindi anzitutto referenziarlo e fare il setup del necessario.
+ASP.NET Core MVC è disponibile sotto forma di pacchetto NuGet. Vediamo quindi come referenziarlo, farne il setup e creare un semplice controller.
 
 1. Tasto destro sulla solution > Manage NuGet Packages for Solution
 2. Cercare e referenziare "Microsoft.AspNetCore.Mvc"
@@ -70,7 +70,11 @@ namespace Health.Web
 }
 ```
 
-7. Provare ora a modificare HomeController nel seguente modo:
+> _app.UseMvcWithDefaultRoute()_ va messo dopo _app.UseStaticFiles()_ per evitare che il routing MVC intercetti le HTTP/GET ai file statici.
+
+# Errori
+
+Provare ora a modificare HomeController nel seguente modo:
 
 ```csharp
 using Microsoft.AspNetCore.Mvc;
@@ -85,9 +89,34 @@ namespace Health.Web.Controllers
 }
 ```
 
+Navigando su _/home/index_ si ottiene una pagina con il dettaglio dell'eccezione:
+
+![Exception Detail](ExceptionDetail.png)
+
+Si noti ora il seguente frammento di codice in _Startup.cs_:
+
+```csharp
+public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+{
+    if (env.IsDevelopment())
+    {
+        app.UseDeveloperExceptionPage();
+    }
+```
+
+L'effetto è il seguente: se l'environment di esecuzione dell'applicazione ASP.NET è "development" allora, in caso di eccezione, va mostrata una pagina con il dettaglio dell'eccezione.
+L'environment di esecuzione è letto dalla variabile d'ambiente _ASPNETCORE_ENVIRONMENT_.
+In Visual Studio è possibile assegnare un valore alla variabile d'ambiente nel seguente modo:
+1. click con il tasto destro sul progetto > Properties
+2. fare click sul tab _Debug_
+3. modificare il valore della variabile che di default vale "Development" e navigare nuovamente su _/home/index_.
+
 # View
+ASP.NET Core MVC utilizza l'approccio "convention over configuration" (https://it.wikipedia.org/wiki/Convention_Over_Configuration) per associare view a controller.
+Vedimo come creare una view.
+
 1. Aggiungere al progetto il folder Views
-2. Aggiungere il folder Home come subfolder di Views
+2. Aggiungere il folder Home come subfolder di Views (il folder deve avere lo stesso nome del controller a meno del suffisso "Controller")
 3. Modificare HomeController come segue:
 
 ```csharp
@@ -109,7 +138,7 @@ namespace Health.Web.Controllers
 
 4. Tasto destro su Home > Add > View...:
 
->* *View name*: Index
+>* *View name*: Index (la view deve avere il nome della action)
 >* *Template*: Empty (without model)
 >* *Create as a partial view*: non selezionato
 >* *Use a layout page*: lasciare selezionato
@@ -128,7 +157,31 @@ namespace Health.Web.Controllers
 </html>
 ```
 
+> E' possibile renderizzare un'altra view specificandone il nome nel seguente modo:
+
+```csharp
+using Microsoft.AspNetCore.Mvc;
+
+namespace Health.Web.Controllers
+{
+    public class HomeController : Controller
+    {
+        public IActionResult Index()
+        {
+            ViewBag.Title = "Hello Razor";
+
+            return View("Mobile");
+        }
+    }
+}
+```
+
+> In questo caso ASP.NET MVC cercherebbe la view _/Views/Home/Mobile.cshtml_.
+
 # Layout
+Il layout permette di condividere tra le view le parti comuni di interfaccia, ad es. lo scheletro HTML della pagina.
+Vediamo un esempio.
+
 1. Creare il folder Shared all'interno di Views
 2. Click con il tasto destro su Shared > Add > New Item...
 3. Filtrare per "layout" e scegliere quindi "Razor Layout" lasciando il nome di default _Layout.cshtml
@@ -146,7 +199,30 @@ namespace Health.Web.Controllers
 }
 ```
 
-5. Modificare il file Views/Home/Index.cshtml come segue:
+5. Modificare il file _Views/Home/Index.cshtml_ come segue:
+
+```csharp
+@{ 
+    // /Views/Shared/_Layout.cshtml
+    Layout = "_Layout";
+
+    ViewBag.Title = "Hello Razor";
+}
+
+<h1>Hello Razor!</h1>
+```
+
+6. Tasto destro sul folder Views > Add > New Item...; filtrare per "razor" e scegliere "Razor View Start"
+7. Lanciare e osservare il risultato.
+8. E' possibile evitare di dover indicare esplicitamente il layout indicandone uno di default. Aggiungere il file __ViewStart.cshtml_ al folder _Views_:
+
+```csharp
+@{
+    Layout = "_Layout";
+}
+```
+
+9. E' quindi possibile rimuovere l'indicazione del layout in _Views/Home/Index.cshtml_:
 
 ```csharp
 @{ 
@@ -155,9 +231,6 @@ namespace Health.Web.Controllers
 
 <h1>Hello Razor!</h1>
 ```
-
-6. Tasto destro sul folder Views > Add > New Item...; filtrare per "razor" e sceglier "Razor View Start"
-7. Lanciare e osservare il risultato.
 
 # Model
 1. Aggiungere il folder Models a pari livello di Controllers e Views
@@ -1032,10 +1105,135 @@ namespace Health.Web.Data
 }
 ```
 
-9. Iniettare in _Startup.cs_ la dipendenza che consentirà di creare istanze di _HealthDataContext_:
+9. Creare il folder _Extensions_ e all'interno aggiungere il file _DataConnectionExtensions.cs_:
 
 ```csharp
+using LinqToDB;
+using LinqToDB.Data;
+using System;
+using System.Threading.Tasks;
 
+namespace Health.Web.Extensions
+{
+    public static class DataConnectionExtensions
+    {
+        public static void CreateTableIfNotExists<T>(this DataConnection db) => RunIgnoringException(() => db.CreateTable<T>());
+
+        public static async Task CreateTableIfNotExistsAsync<T>(this DataConnection db) => await RunIgnoringExceptionAsync(async () => await db.CreateTableAsync<T>());
+
+        static void RunIgnoringException(Action action)
+        {
+            if (action == null) return;
+
+            try
+            {
+                action.Invoke();
+            }
+            catch
+            { }
+        }
+
+        static async Task RunIgnoringExceptionAsync(Func<Task> action)
+        {
+            if (action == null) await Task.Yield();
+
+            try
+            {
+                await action.Invoke();
+            }
+            catch
+            { }
+        }
+    }
+}
+```
+
+10. Iniettare in _Startup.cs_ la dipendenza che consentirà di creare istanze di _HealthDataContext_:
+
+```csharp
+using Health.Web.Configuration;
+using Health.Web.Data;
+using Health.Web.Extensions;
+using Health.Web.Models;
+using LinqToDB;
+using LinqToDB.DataProvider.SQLite;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using System;
+
+namespace Health.Web
+{
+    public class Startup
+    {
+        public Startup(IConfiguration configuration)
+        {
+            Configuration = configuration;
+        }
+
+        public IConfiguration Configuration { get; }
+
+        public void ConfigureServices(IServiceCollection services)
+        {
+            services.AddMvc();
+
+            services.Configure<Kendo>(Configuration.GetSection("kendo"));
+            services.Configure<Theme>(Configuration.GetSection("theme"));
+
+            var dbFactory = new HealthDataContextFactory(
+                dataProvider: SQLiteTools.GetDataProvider(),
+                connectionString: Configuration.GetConnectionString("Health")
+            );
+
+            services.AddSingleton<IDataContextFactory<HealthDataContext>>(dbFactory);
+            SetupDatabase(dbFactory);
+        }
+
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+        {
+            if (env.IsDevelopment())
+            {
+                app.UseDeveloperExceptionPage();
+            }
+
+            app.UseStaticFiles();
+
+            /*
+             Shortcut per:
+
+             routes.MapRoute(
+                name: "default",
+                template: "{controller=Home}/{action=Index}/{id?}");
+             */
+            app.UseMvcWithDefaultRoute();
+
+            app.Run(async (context) =>
+            {
+                await context.Response.WriteAsync("Oops, something went wrong");
+            });
+        }
+
+        void SetupDatabase(IDataContextFactory<HealthDataContext> dataContext)
+        {
+            using (var db = dataContext.Create())
+            {
+                db.CreateTableIfNotExists<FitbitDevice>();
+                db.CreateTableIfNotExists<Heartbeat>();
+
+                db.InsertOrReplace(new FitbitDevice { Id = "D1", AccountId = "A1" });
+                db.InsertOrReplace(new FitbitDevice { Id = "D2", AccountId = "A2" });
+
+                db.Insert(new Heartbeat { DeviceId = "D1", Timestamp = DateTime.Now, Value = 60 });
+                db.Insert(new Heartbeat { DeviceId = "D1", Timestamp = DateTime.Now, Value = 80 });
+                db.Insert(new Heartbeat { DeviceId = "D1", Timestamp = DateTime.Now, Value = 65 });
+                db.Insert(new Heartbeat { DeviceId = "D2", Timestamp = DateTime.Now, Value = 60 });
+                db.Insert(new Heartbeat { DeviceId = "D2", Timestamp = DateTime.Now, Value = 70 });
+            }
+        }
+    }
+}
 ```
 
 # Riferimenti
