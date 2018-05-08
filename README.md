@@ -233,6 +233,8 @@ namespace Health.Web.Controllers
 ```
 
 # Model
+In ASP.NET MVC, un model è un qualunque oggetto di qualunque tipo che il controller può passare alla view.
+
 1. Aggiungere il folder Models a pari livello di Controllers e Views
 2. Aggiungere nel folder Models il file Heartbeat.cs 
 
@@ -321,6 +323,9 @@ namespace Health.Web.Controllers
 </table>
 ```
 
+>* Senza la direttiva ```@model IEnumerable<Heartbeat>```, la variable Model è comunque disponibile ma di tipo dynamic.
+>* In generale un controller ha altre modi per passare dei dati alla view: ViewBag (dynamic), ViewData (Dictionary<string, object>).
+
 # Kendo UI
 1. Creare il folder kendo all'interno di wwwroot
 2. Copiare i folder js e styles dalla directory di Kendo al folder wwwroot/kendo/2018.1.221 del progetto
@@ -400,8 +405,8 @@ namespace Health.Web.Controllers
 ```
 
 # Configurazione
-1. Aggiungere al progetto il folder _Src_ e il subfolder _Health.Web.Configuration_
-2. All'interno aggiungere la classe Kendo:
+1. Aggiungere il folder _Configuration_ alla pari di Controllers, Views, ...
+2. All'interno del folder appena creato aggiungere il file _Kendo.cs_:
 
 ```csharp
 namespace Health.Web.Configuration
@@ -413,31 +418,7 @@ namespace Health.Web.Configuration
 }
 ```
 
-3. Tasto dx sul progetto > Add > New Item...; filtrare per _appsettings_ e quindi aggiungere _App Settings File_
-4. Modificare il file appsettings.json come segue:
-
-```json
-{
-  "kendo": {
-    "version": "2018.1.221"
-  }  
-}
-```
-
-5. Aggiungere il folder _Configuration_ alla pari di Controllers, Views, ...
-6. All'interno del folder appena creato aggiungere il file _Kendo.cs_:
-
-```csharp
-namespace Health.Web.Configuration
-{
-    public class Kendo
-    {
-        public string Version { get; set; }
-    }
-}
-```
-
-7. Modificare _Startup.cs_ come segue:
+3. Modificare _Startup.cs_ come segue:
 
 ```csharp
 using Microsoft.AspNetCore.Hosting;
@@ -468,7 +449,7 @@ namespace Health.Web
 }
 ```
 
-7. Modificare il file /Views/Shared/_Layout.cshtml nel seguente modo:
+4. Modificare il file /Views/Shared/_Layout.cshtml nel seguente modo:
 
 ```csharp
 @using Microsoft.Extensions.Options
@@ -981,7 +962,33 @@ Assembly.GetEntryAssembly().GetCustomAttribute<AssemblyCompanyAttribute>()?.Comp
 > * Aggiungere la possibilità di configurare in _appsettings.json_ il tema Kendo da utilizzare.
 
 # Servizi
-Sviluppiamo ora la parte di accesso ai dati (Create Read Update Delete) sotto forma di servizi.
+Nell'ambito delle applicazioni web, i servizi offrono un modo conveniente per gestire l'accesso ai dati senza dover ricaricare l'intera pagina.
+
+AJAX (https://it.wikipedia.org/wiki/AJAX) è il nome di questa tecnica.
+
+Le operazioni che tipicamente vengono esposte come servizio sono: Create, Read, Update, Delete o più semplicemente CRUD.
+
+Indicativamente si sviluppa un servizio REST per ogni entità e si fa corrispondere un verbo HTTP a ciascuna delle quattro operazioni fondamentali:
+
+Operazione | HTTP Verb | URL Schema                 | Esempio
+---------- | --------- | -------------------------- | ------------
+Create     | POST      | /{Entità al plurale}/\{Id} | /categories/1
+Read       | GET       | /{Entità al plurale}       | /categories
+Update     | PUT       | /{Entità al plurale}/\{Id} | /categories/1
+Delete     | DELETE    | /{Entità al plurale}/\{Id} | /categories/1
+
+Tranne Read e Delete, in Create e Update i dati vengono passati nel body della richiesta, serializzati in un qualche wire-format (JSON, XML, ...), tipicamente JSON, es.
+
+```
+HTTP/POST /categories
+{
+    "id": 1,
+    "description": "test"
+}
+```
+
+Vediamo ora come implementare un servizio CRUD che funziona su un'entità generica.
+
 1. Referenziare i package _linq2db.Core_ e _Microsoft.Data.SQLite_
 2. Nel folder _Models_ aggiungere il file _IHasId.cs_:
 
