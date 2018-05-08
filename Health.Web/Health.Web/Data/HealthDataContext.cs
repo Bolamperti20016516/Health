@@ -14,5 +14,7 @@ namespace Health.Web.Data
         public ITable<FitbitDevice> FitbitDevices => GetTable<FitbitDevice>();
 
         public ITable<Heartbeat> Heartbeats => GetTable<Heartbeat>();
+
+        public ITable<Category> Categories => GetTable<Category>();
     }
 }

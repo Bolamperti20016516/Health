@@ -68,6 +68,7 @@ namespace Health.Web
             {
                 db.CreateTableIfNotExists<FitbitDevice>();
                 db.CreateTableIfNotExists<Heartbeat>();
+                db.CreateTableIfNotExists<Category>();
 
                 db.InsertOrReplace(new FitbitDevice { Id = "D1", AccountId = "A1" });
                 db.InsertOrReplace(new FitbitDevice { Id = "D2", AccountId = "A2" });
