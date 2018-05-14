@@ -232,6 +232,67 @@ namespace Health.Web.Controllers
 <h1>Hello Razor!</h1>
 ```
 
+> Vedere: https://docs.microsoft.com/en-us/aspnet/core/mvc/views/razor?view=aspnetcore-2.0
+
+# Section
+Le sezioni consentono di avere aree del layout il cui contenuto può variare da view a view.
+Si supponga ad esempio di voler definire uno spazio dedicato dedicato alla breadcrumb che cambia da view a view.
+Per implementare il concetto modifichiamo _Layout.cshtml come segue:
+
+```csharp
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>@ViewBag.Title</title>
+</head>
+<body>
+    @RenderSection("Breadcrumb", required: false)
+
+    <div>
+        @RenderBody()
+    </div>
+</body>
+</html>
+```
+
+```@RenderSection("Breadcrumb", required: false)``` definisce la posizione in cui una vista può dare contenuto
+alla sezione _Breadcrumb_. L'attributo _required: false_ significa che le viste non sono obbligate a riempire la sezione.
+
+_Index.cshtml_ può quindi riempire la sezione nel seguente modo:
+
+```csharp
+@model IEnumerable<Heartbeat>
+@{
+    ViewBag.Title = "Hearthbeat";
+}
+
+@section Breadcrumb {
+    Home > Index
+}
+
+<table border="1">
+    <thead>
+        <tr>
+            <th>Id</th>
+            <th>DeviceId</th>
+            <th>Timestamp</th>
+            <th>Value</th>
+        </tr>
+    </thead>
+    @foreach (var m in Model)
+    {
+        <tr>
+            <td>@m.Id</td>
+            <td>@m.DeviceId</td>
+            <td>@m.Timestamp</td>
+            <td>@m.Value</td>
+        </tr>
+    }
+</table>
+```
+
 # Model
 In ASP.NET MVC, un model è un qualunque oggetto di qualunque tipo che il controller può passare alla view.
 
