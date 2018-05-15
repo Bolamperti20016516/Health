@@ -1604,6 +1604,64 @@ namespace Health.Web
 
 > Navigare su http://.../swagger/
 
+# Validazione
+1. Referenziare il package nuget _FluentValidation.AspNetCore_
+2. Aggiungere il folder _ActionFilters_ e all'interno il file _ValidateModelAttribute_:
+
+```csharp
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Filters;
+
+namespace Health.Web.ActionFilters
+{
+    public class ValidateModelAttribute : ActionFilterAttribute
+    {
+        public override void OnActionExecuting(ActionExecutingContext context)
+        {
+            if (!context.ModelState.IsValid)
+            {
+                context.Result = new BadRequestObjectResult(context.ModelState);
+            }
+        }
+    }
+}
+```
+
+3. In _Startup.cs_ aggiungere l'import del namespace _FluentValidation.AspNetCore_ e _Health.Web.ActionFilters_
+4. In _Startup.cs_:
+
+```csharp
+public void ConfigureServices(IServiceCollection services)
+{
+    services.AddMvc(options =>
+    {
+        options.Filters.Add<ValidateModelAttribute>();
+    }).AddFluentValidation(fv =>
+    {
+        fv.RegisterValidatorsFromAssemblyContaining<Startup>();
+        fv.RunDefaultMvcValidationAfterFluentValidationExecutes = false;
+    });
+```
+
+5. Aggiungere il folder _Validators_ e all'interno il file _CategoryValidator.cs_:
+
+```csharp
+using FluentValidation;
+using Health.Web.Models;
+
+namespace Health.Web.Validators
+{
+    public class CategoryValidator : AbstractValidator<Category>
+    {
+        public CategoryValidator()
+        {
+            RuleFor(p => p.Id).GreaterThanOrEqualTo(0);
+            RuleFor(p => p.Name).NotEmpty();
+        }
+    }
+}
+```
+
 # Riferimenti
 * ASP.NET: https://docs.microsoft.com/en-us/aspnet/core/?view=aspnetcore-2.0
 * Creazione di servizi REST: https://docs.microsoft.com/en-us/aspnet/core/tutorials/first-web-api?view=aspnetcore-2.0

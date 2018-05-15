@@ -1,4 +1,6 @@
-﻿using Health.Web.Configuration;
+﻿using FluentValidation.AspNetCore;
+using Health.Web.ActionFilters;
+using Health.Web.Configuration;
 using Health.Web.Data;
 using Health.Web.Extensions;
 using Health.Web.Models;
@@ -25,7 +27,14 @@ namespace Health.Web
 
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddMvc();
+            services.AddMvc(options =>
+            {
+                options.Filters.Add<ValidateModelAttribute>();
+            }).AddFluentValidation(fv =>
+            {
+                fv.RegisterValidatorsFromAssemblyContaining<Startup>();
+                fv.RunDefaultMvcValidationAfterFluentValidationExecutes = false;
+            });
 
             services.AddSwaggerGen(c =>
             {
