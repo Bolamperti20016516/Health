@@ -3,12 +3,12 @@ using System;
 
 namespace Health.Web.Models
 {
-    public class Heartbeat : IHasId<long>
+    public class Heartbeat : IHasId<int>
     {
         [PrimaryKey]
         [NotNull]
         [Identity]
-        public long Id { get; set; }
+        public int Id { get; set; }
 
         public DateTime Timestamp { get; set; }
 

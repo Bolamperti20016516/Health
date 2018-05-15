@@ -1,0 +1,38 @@
+﻿@model IEnumerable<Category>
+@{
+    ViewBag.Title = "Categories";
+    ViewBag.PageHeader = "Categories";
+    ViewBag.Logo = ViewBag.LogoMini = "Health";
+}
+
+<div id="grid"></div>
+
+<script>
+
+$(document).ready(function () {
+    var data = @(Json.Serialize(Model));
+
+    $("#grid").kendoGrid({
+        dataSource: {
+            data: data,
+            schema: {
+                model: {
+                    fields: {
+                        id: { type: "number" },
+                        name: { type: "string" }
+                    }
+                }
+            }
+        },
+        scrollable: true,
+        sortable: true,
+        filterable: true,
+        editable: false,
+        columns: [
+            "id",
+            { field: "name", title: "Name" }
+        ]
+    });
+})
+
+</script>

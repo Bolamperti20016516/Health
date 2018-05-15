@@ -1,5 +1,6 @@
 ﻿using LinqToDB;
 using LinqToDB.Data;
+using Microsoft.Data.Sqlite;
 using System;
 using System.Threading.Tasks;
 
@@ -19,7 +20,7 @@ namespace Health.Web.Extensions
             {
                 action.Invoke();
             }
-            catch
+            catch (SqliteException)
             { }
         }
 

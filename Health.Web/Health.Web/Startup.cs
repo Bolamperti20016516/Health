@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Swashbuckle.AspNetCore.Swagger;
 using System;
 
 namespace Health.Web
@@ -26,16 +27,33 @@ namespace Health.Web
         {
             services.AddMvc();
 
+            services.AddSwaggerGen(c =>
+            {
+                c.SwaggerDoc("v1", new Info
+                {
+                    Version = "v1",
+                    Title = "Health REST APIs",
+                    Description = "REST APIs for health",
+                    TermsOfService = "None"
+                });
+
+                // Se decommento ottengo un'eccezione quando ho un controller (es. CategoriesController) che estende un altro controller.
+                // Set the comments path for the Swagger JSON and UI.
+                //var basePath = AppContext.BaseDirectory;
+                //var xmlPath = Path.Combine(basePath, "REST.xml");
+                //c.IncludeXmlComments(xmlPath);
+            });
+
             services.Configure<Kendo>(Configuration.GetSection("kendo"));
             services.Configure<Theme>(Configuration.GetSection("theme"));
-             
-            //var dbFactory = new HealthDataContextFactory(
-            //    dataProvider: SQLiteTools.GetDataProvider(),
-            //    connectionString: Configuration.GetConnectionString("Health")
-            //);
 
-            //services.AddSingleton<IDataContextFactory<HealthDataContext>>(dbFactory);
-            //SetupDatabase(dbFactory);
+            var dbFactory = new HealthDataContextFactory(
+                dataProvider: SQLiteTools.GetDataProvider(),
+                connectionString: Configuration.GetConnectionString("Health")
+            );
+
+            services.AddSingleton<IDataContextFactory<HealthDataContext>>(dbFactory);
+            SetupDatabase(dbFactory);
         }
 
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
@@ -46,6 +64,15 @@ namespace Health.Web
             }
 
             app.UseStaticFiles();
+
+            // Enable middleware to serve generated Swagger as a JSON endpoint.
+            app.UseSwagger();
+
+            // Enable middleware to serve swagger-ui (HTML, JS, CSS, etc.), specifying the Swagger JSON endpoint.
+            app.UseSwaggerUI(c =>
+            {
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "V1");
+            });
 
             /*
              Shortcut per:
@@ -78,6 +105,9 @@ namespace Health.Web
                 db.Insert(new Heartbeat { DeviceId = "D1", Timestamp = DateTime.Now, Value = 65 });
                 db.Insert(new Heartbeat { DeviceId = "D2", Timestamp = DateTime.Now, Value = 60 });
                 db.Insert(new Heartbeat { DeviceId = "D2", Timestamp = DateTime.Now, Value = 70 });
+
+                db.InsertOrReplace(new Category { Id = 1, Name = "Band" });
+                db.InsertOrReplace(new Category { Id = 2, Name = "Smartwatch" });
             }
         }
     }
