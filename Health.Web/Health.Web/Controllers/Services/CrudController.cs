@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Health.Web.Controllers
+namespace Health.Web.Controllers.Services
 {
     public abstract class CrudController<TEntity, TId> : BaseController
         where TEntity : class, IHasId<TId>

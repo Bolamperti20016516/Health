@@ -1081,129 +1081,8 @@ namespace Health.Web.Models
 }
 ```
 
-4. Modificare la classe _HealthDataContext_ nel seguente modo:
-
-```csharp
-using Health.Web.Models;
-using LinqToDB;
-using LinqToDB.Data;
-using LinqToDB.DataProvider;
-
-namespace Health.Web.Data
-{
-    public class HealthDataContext : DataConnection
-    {
-        public HealthDataContext(IDataProvider dataProvider, string connectionString)
-            : base(dataProvider, connectionString)
-        { }
-
-        public ITable<FitbitDevice> FitbitDevices => GetTable<FitbitDevice>();
-
-        public ITable<Heartbeat> Heartbeats => GetTable<Heartbeat>();
-
-        public ITable<Category> Categories => GetTable<Category>();
-    }
-}
-```
-
-5. Modificare _Startup.cs_ in modo che sia creata la tabella _Category_ se già non esiste:
+4. Modificare i file _Models/Heartbeat.cs_ e _Models/FitbitDevice.cs_ come segue:
  
-```csharp
-void SetupDatabase(IDataContextFactory<HealthDataContext> dataContext)
-{
-    using (var db = dataContext.Create())
-    {
-        db.CreateTableIfNotExists<FitbitDevice>();
-        db.CreateTableIfNotExists<Heartbeat>();
-        db.CreateTableIfNotExists<Category>();
-```
-
-6. Aggiungere al folder _Controllers_ la classe _BaseController_, classe base per tutti i controller:
-
-```csharp
-using Health.Web.Data;
-using Microsoft.AspNetCore.Mvc;
-
-namespace Health.Web.Controllers
-{
-    public abstract class BaseController : Controller
-    {
-        IDataContextFactory<HealthDataContext> dbFactory;
-        HealthDataContext db;
-
-        protected T TryResolve<T>() => (T)HttpContext.RequestServices.GetService(typeof(T));
-
-        protected IDataContextFactory<HealthDataContext> DbFactory => dbFactory ?? (dbFactory = TryResolve<IDataContextFactory<HealthDataContext>>());
-
-        protected HealthDataContext Db => db ?? (db = DbFactory.Create());
-
-        protected override void Dispose(bool disposing)
-        {
-            db?.Dispose();
-
-            base.Dispose(disposing);
-        }
-    }
-}
-```
-
-7. Aggiungere al folder _Controllers_ la classe _CrudController_ che sarà la base per tutti i controller che implementano le operazioni CRUD:
-
-```csharp
-using Health.Web.Models;
-using LinqToDB;
-using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
-namespace Health.Web.Controllers
-{
-    public abstract class CrudController<TEntity, TId> : BaseController
-        where TEntity : class, IHasId<TId>
-    {
-        [HttpGet]
-        public async Task<IEnumerable<TEntity>> Get() => await Db.GetTable<TEntity>().ToListAsync();
-
-        [HttpGet("{id}")]
-        public async Task<TEntity> Get(TId id) => await Db.GetTable<TEntity>().FirstOrDefaultAsync(c => c.Id.Equals(id));
-
-        [HttpPost]
-        public async Task Post([FromBody]TEntity item) => await Db.InsertAsync(item);
-
-        [HttpPut("{id}")]
-        public async Task Put(TId id, [FromBody]TEntity item)
-        {
-            item.Id = id;
-
-            await Db.UpdateAsync(item);
-        }
-
-        [HttpDelete("{id}")]
-        public async Task Delete(TId id) => await Db.GetTable<TEntity>().Where(c => c.Id.Equals(id)).DeleteAsync();
-    }
-}
-```
-
-8. Aggiungere quindi il controller _CategoriesController_ che implementa le funzionalità CRUD relativamente al modello _Category_:
-
-```csharp
-using Health.Web.Models;
-using Microsoft.AspNetCore.Mvc;
-
-namespace Health.Web.Controllers
-{
-    [Route("api/[controller]")]
-    public class CategoriesController : CrudController<Category, int>
-    { }
-}
-```
-
-
-
-----------------------------------------
-3. Nel folder _Models_ aggiungere il file _FitbitDevice.cs_:
-
 ```csharp
 using LinqToDB.Mapping;
 
@@ -1219,8 +1098,6 @@ namespace Health.Web.Models
     }
 }
 ```
-
-4. Modificare il file _Heartbeat.cs_ nel seguente modo:
 
 ```csharp
 using LinqToDB.Mapping;
@@ -1255,7 +1132,7 @@ namespace Health.Web.Models
 ```csharp
 using LinqToDB.Data;
 
-namespace Health.Web
+namespace Health.Web.Data
 {
     public interface IDataContextFactory<T>
         where T : DataConnection
@@ -1265,7 +1142,7 @@ namespace Health.Web
 }
 ```
 
-7. Aggiungere il file _HealthDataContext.cs_ al folder _Data_:
+7. Modificare la classe _HealthDataContext_ nel seguente modo:
 
 ```csharp
 using Health.Web.Models;
@@ -1284,6 +1161,8 @@ namespace Health.Web.Data
         public ITable<FitbitDevice> FitbitDevices => GetTable<FitbitDevice>();
 
         public ITable<Heartbeat> Heartbeats => GetTable<Heartbeat>();
+
+        public ITable<Category> Categories => GetTable<Category>();
     }
 }
 ```
@@ -1426,6 +1305,7 @@ namespace Health.Web
         {
             using (var db = dataContext.Create())
             {
+                db.CreateTableIfNotExists<Category>();
                 db.CreateTableIfNotExists<FitbitDevice>();
                 db.CreateTableIfNotExists<Heartbeat>();
 
@@ -1463,13 +1343,80 @@ namespace Health.Web
 }
 ```
 
-12. Aggiungere la view _Categories/Index.cshtml_:
+12. Aggiungere al folder _Controllers_ la classe _BaseController_, classe base per tutti i controller:
+
+```csharp
+using Health.Web.Data;
+using Microsoft.AspNetCore.Mvc;
+
+namespace Health.Web.Controllers
+{
+    public abstract class BaseController : Controller
+    {
+        IDataContextFactory<HealthDataContext> dbFactory;
+        HealthDataContext db;
+
+        protected T TryResolve<T>() => (T)HttpContext.RequestServices.GetService(typeof(T));
+
+        protected IDataContextFactory<HealthDataContext> DbFactory => dbFactory ?? (dbFactory = TryResolve<IDataContextFactory<HealthDataContext>>());
+
+        protected HealthDataContext Db => db ?? (db = DbFactory.Create());
+
+        protected override void Dispose(bool disposing)
+        {
+            db?.Dispose();
+
+            base.Dispose(disposing);
+        }
+    }
+}
+```
+
+13. Creare il subfolder _Services_ all'interno di _Controllers_. Aggiungere al folder _Services_ la classe _CrudController_ che sarà la base per tutti i controller/servizi che implementano le operazioni CRUD:
+
+```csharp
+using Health.Web.Models;
+using LinqToDB;
+using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+
+namespace Health.Web.Controllers.Services
+{
+    public abstract class CrudController<TEntity, TId> : BaseController
+        where TEntity : class, IHasId<TId>
+    {
+        [HttpGet]
+        public async Task<IEnumerable<TEntity>> Get() => await Db.GetTable<TEntity>().ToListAsync();
+
+        [HttpGet("{id}")]
+        public async Task<TEntity> Get(TId id) => await Db.GetTable<TEntity>().FirstOrDefaultAsync(c => c.Id.Equals(id));
+
+        [HttpPost]
+        public async Task Post([FromBody]TEntity item) => await Db.InsertAsync(item);
+
+        [HttpPut("{id}")]
+        public async Task Put(TId id, [FromBody]TEntity item)
+        {
+            item.Id = id;
+
+            await Db.UpdateAsync(item);
+        }
+
+        [HttpDelete("{id}")]
+        public async Task Delete(TId id) => await Db.GetTable<TEntity>().Where(c => c.Id.Equals(id)).DeleteAsync();
+    }
+}
+```
+
+14. Aggiungere quindi il controller _CategoriesController_ che implementa le funzionalità CRUD relativamente al modello _Category_:
 
 ```csharp
 using Health.Web.Models;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Health.Web.Controllers
+namespace Health.Web.Controllers.Services
 {
     [Route("api/[controller]")]
     public class CategoriesController : CrudController<Category, int>
@@ -1661,6 +1608,9 @@ namespace Health.Web.Validators
     }
 }
 ```
+
+# AJAX Binding
+
 
 # Riferimenti
 * ASP.NET: https://docs.microsoft.com/en-us/aspnet/core/?view=aspnetcore-2.0

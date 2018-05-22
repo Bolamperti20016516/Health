@@ -1,6 +1,6 @@
 ﻿using LinqToDB.Data;
 
-namespace Health.Web
+namespace Health.Web.Data
 {
     public interface IDataContextFactory<T>
         where T : DataConnection
