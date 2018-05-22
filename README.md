@@ -1609,8 +1609,35 @@ namespace Health.Web.Validators
 }
 ```
 
-# AJAX Binding
+# Come consumare servizi REST da C#
+1. Aggiungere la reference al package nuget _RestSharp_
+2. E' possibile ricevere l'output "raw":
 
+```csharp
+var client = new RestClient("http://localhost:64857");
+var rq = new RestRequest("/api/categories/", Method.GET);
+var rs = client.Execute(rq);
+Console.WriteLine(rs.Content);
+```
+
+3. E' anche possibile consumare deserializzando il risultato in un oggetto:
+
+```csharp
+void Main()
+{
+	var client = new RestClient("http://localhost:64857");
+	var rq = new RestRequest("/api/categories/", Method.GET);
+	var rs = client.Execute<List<Category>>(rq);
+	rs.Data.Dump();
+}
+
+class Category
+{
+	public int Id { get; set; }
+	
+	public string Name { get; set; }
+}
+```
 
 # Riferimenti
 * ASP.NET: https://docs.microsoft.com/en-us/aspnet/core/?view=aspnetcore-2.0
