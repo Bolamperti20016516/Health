@@ -10,24 +10,46 @@ namespace Health.Web.Controllers.Services
     public abstract class CrudController<TEntity, TId> : BaseController
         where TEntity : class, IHasId<TId>
     {
+        static readonly object Empty = new { };
+
         [HttpGet]
-        public async Task<IEnumerable<TEntity>> Get() => await Db.GetTable<TEntity>().ToListAsync();
+        public async Task<IEnumerable<TEntity>> Read() => await Db.GetTable<TEntity>().ToListAsync();
 
         [HttpGet("{id}")]
-        public async Task<TEntity> Get(TId id) => await Db.GetTable<TEntity>().FirstOrDefaultAsync(c => c.Id.Equals(id));
+        public async Task<TEntity> Read(TId id) => await Db.GetTable<TEntity>().FirstOrDefaultAsync(c => c.Id.Equals(id));
 
-        [HttpPost]
-        public async Task Post([FromBody]TEntity item) => await Db.InsertAsync(item);
-
-        [HttpPut("{id}")]
-        public async Task Put(TId id, [FromBody]TEntity item)
+        [HttpPost("create")]
+        public async Task<object> Create([FromBody]TEntity item)
         {
-            item.Id = id;
+            await Db.InsertAsync(item);
 
-            await Db.UpdateAsync(item);
+            return Empty;
         }
 
-        [HttpDelete("{id}")]
-        public async Task Delete(TId id) => await Db.GetTable<TEntity>().Where(c => c.Id.Equals(id)).DeleteAsync();
+        [HttpPost("update")]
+        public async Task<object> Update([FromBody]TEntity item)
+        {
+            // Quando la colonna "id" è editabile, la Grid Kendo invoca /update quando Id > 0.
+            // Gestisco questo caso in Update facendo fallback su Create nel caso in cui il record non esista.
+            var e = await Read(item.Id);
+            if (e == null)
+            {
+                return await Create(item);
+            }
+            else
+            {
+                await Db.UpdateAsync(item);
+            }
+
+            return Empty;
+        }
+
+        [HttpPost("delete")]
+        public async Task Delete([FromBody]TEntity item)
+        {
+            var id = item.Id;
+
+            await Db.GetTable<TEntity>().Where(c => c.Id.Equals(id)).DeleteAsync();
+        }
     }
 }

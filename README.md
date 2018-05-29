@@ -1388,16 +1388,16 @@ namespace Health.Web.Controllers.Services
         where TEntity : class, IHasId<TId>
     {
         [HttpGet]
-        public async Task<IEnumerable<TEntity>> Get() => await Db.GetTable<TEntity>().ToListAsync();
+        public async Task<IEnumerable<TEntity>> Read() => await Db.GetTable<TEntity>().ToListAsync();
 
         [HttpGet("{id}")]
-        public async Task<TEntity> Get(TId id) => await Db.GetTable<TEntity>().FirstOrDefaultAsync(c => c.Id.Equals(id));
+        public async Task<TEntity> Read(TId id) => await Db.GetTable<TEntity>().FirstOrDefaultAsync(c => c.Id.Equals(id));
 
         [HttpPost]
-        public async Task Post([FromBody]TEntity item) => await Db.InsertAsync(item);
+        public async Task Create([FromBody]TEntity item) => await Db.InsertAsync(item);
 
         [HttpPut("{id}")]
-        public async Task Put(TId id, [FromBody]TEntity item)
+        public async Task Update(TId id, [FromBody]TEntity item)
         {
             item.Id = id;
 
@@ -1639,6 +1639,139 @@ class Category
 }
 ```
 
+# Binding della grid Kendo ai servizi REST
+Il binding precedente, anche se formalmente corretto, non funziona bene se i servizi sono utilizzati con la grid Kendo.
+Apportiamo quindi alcune modifiche a CrudController per renderlo utilizzabile con la grid.
+
+```csharp
+using Health.Web.Models;
+using LinqToDB;
+using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+
+namespace Health.Web.Controllers.Services
+{
+    public abstract class CrudController<TEntity, TId> : BaseController
+        where TEntity : class, IHasId<TId>
+    {
+        static readonly object Empty = new { };
+
+        [HttpGet]
+        public async Task<IEnumerable<TEntity>> Read() => await Db.GetTable<TEntity>().ToListAsync();
+
+        [HttpGet("{id}")]
+        public async Task<TEntity> Read(TId id) => await Db.GetTable<TEntity>().FirstOrDefaultAsync(c => c.Id.Equals(id));
+
+        [HttpPost("create")]
+        public async Task<object> Create([FromBody]TEntity item)
+        {
+            await Db.InsertAsync(item);
+
+            return Empty;
+        }
+
+        [HttpPost("update")]
+        public async Task<object> Update([FromBody]TEntity item)
+        {
+            // Quando la colonna "id" è editabile, la Grid Kendo invoca /update quando Id > 0.
+            // Gestisco questo caso in Update facendo fallback su Create nel caso in cui il record non esista.
+            var e = await Read(item.Id);
+            if (e == null)
+            {
+                return await Create(item);
+            }
+            else
+            {
+                await Db.UpdateAsync(item);
+            }
+
+            return Empty;
+        }
+
+        [HttpPost("delete")]
+        public async Task Delete([FromBody]TEntity item)
+        {
+            var id = item.Id;
+
+            await Db.GetTable<TEntity>().Where(c => c.Id.Equals(id)).DeleteAsync();
+        }
+    }
+}
+```
+
+Modifichiamo quindi _Views/Categories/Index.cshtml_ per fare bind "remoto" della grid con i servizi REST:
+
+```csharp
+@model IEnumerable<Category>
+@{
+    ViewBag.Title = "Categories";
+    ViewBag.PageHeader = "Categories";
+    ViewBag.Logo = ViewBag.LogoMini = "Health";
+}
+
+<div id="grid"></div>
+
+<script>
+
+    $(document).ready(function () {
+        var baseUrl = "@Url.Content("~/api/categories/")";
+
+        $("#grid").kendoGrid({
+            dataSource: {
+                transport: {
+                    read: { url: baseUrl, type: "GET" },
+                    update: { url: baseUrl + "update", type: "POST", dataType: "json", contentType: "application/json" },
+                    destroy: { url: baseUrl + "delete", type: "POST", dataType: "json", contentType: "application/json" },
+                    create: { url: baseUrl + "create", type: "POST", dataType: "json", contentType: "application/json" },
+                    parameterMap: function (model, operation) {
+                        if (operation !== "read" && model) {
+                            return kendo.stringify(model);
+                        }
+                    }
+                },
+                serverPaging: false,
+                serverSorting: false,
+                batch: false, 
+                schema: {
+                    model: {
+                        id: "id",
+                        fields: {
+                            id: { type: "number" },
+                            name: { type: "string" }
+                        }
+                    }
+                }
+            },
+            scrollable: true,
+            sortable: true,
+            filterable: true,
+            editable: "inline",
+            columns: [
+                { command: [ "edit", "destroy" ], title: " ", width: 180 },
+                "id",
+                { field: "name", title: "Name" }
+            ],
+            toolbar: [
+                "create"
+            ],
+            saveChanges: function (e) {
+                // Refresh della grid per avere gli ID.
+                e.sender.one("dataBound", function () {
+                    e.sender.dataSource.read();
+                });
+            },
+        });
+    })
+
+</script>
+```
+
+>* Implementare i servizi "REST" per gestire le operazioni CRUD dell'entità _Heartbeat_ e quindi implementare il bind della grid.
+
+# Caching
+
 # Riferimenti
 * ASP.NET: https://docs.microsoft.com/en-us/aspnet/core/?view=aspnetcore-2.0
 * Creazione di servizi REST: https://docs.microsoft.com/en-us/aspnet/core/tutorials/first-web-api?view=aspnetcore-2.0
@@ -1647,3 +1780,4 @@ class Category
 * Razor syntax reference: https://docs.microsoft.com/en-us/aspnet/core/mvc/views/razor?view=aspnetcore-2.0
 * Kendo UI book: http://codylindley.github.io/the-kendo-ui-book/
 * Template UI: https://adminlte.io/
+* Caching: https://docs.microsoft.com/it-it/aspnet/core/performance/caching/memory?view=aspnetcore-2.0

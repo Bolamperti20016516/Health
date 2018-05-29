@@ -1,7 +1,7 @@
 ﻿@model IEnumerable<Category>
 @{
-    ViewBag.Title = "Categories";
-    ViewBag.PageHeader = "Categories";
+    ViewBag.Title = "Heartbeats";
+    ViewBag.PageHeader = "Heartbeat";
     ViewBag.Logo = ViewBag.LogoMini = "Health";
 }
 
@@ -10,15 +10,15 @@
 <script>
 
     $(document).ready(function () {
-        var baseUrl = "@Url.Content("~/api/categories/")";
+        var baseUrl = "@Url.Content("~/api/heartbeat/")";
 
         $("#grid").kendoGrid({
             dataSource: {
                 transport: {
                     read: { url: baseUrl, type: "GET" },
-                    update: { url: baseUrl + "update", type: "POST", dataType: "json", contentType: "application/json" },
-                    destroy: { url: baseUrl + "delete", type: "POST", dataType: "json", contentType: "application/json" },
-                    create: { url: baseUrl + "create", type: "POST", dataType: "json", contentType: "application/json" },
+                    //update: { url: baseUrl + "update", type: "POST", dataType: "json", contentType: "application/json" },
+                    //destroy: { url: baseUrl + "delete", type: "POST", dataType: "json", contentType: "application/json" },
+                    //create: { url: baseUrl + "create", type: "POST", dataType: "json", contentType: "application/json" },
                     parameterMap: function (model, operation) {
                         if (operation !== "read" && model) {
                             return kendo.stringify(model);
@@ -33,7 +33,9 @@
                         id: "id",
                         fields: {
                             id: { type: "number" },
-                            name: { type: "string" }
+                            timestamp: { type: "date" },
+                            deviceId: { type: "number" },
+                            value: { type: "number" }
                         }
                     }
                 }

@@ -13,6 +13,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Swashbuckle.AspNetCore.Swagger;
 using System;
+using System.Collections.Generic;
 
 namespace Health.Web
 {
@@ -63,6 +64,20 @@ namespace Health.Web
 
             services.AddSingleton<IDataContextFactory<HealthDataContext>>(dbFactory);
             SetupDatabase(dbFactory);
+
+            services.AddSingleton<IEnumerable<IMenuItem>>(new IMenuItem[]
+            {
+                new MenuItem { Text = "Categories", Icon = "link", HRef = "/categories" },
+                new SubMenu
+                {
+                    Text = "Multilevel",
+                    Items = new[]
+                    {
+                        new MenuItem { Text = "Link in level 2", Icon = "link", HRef = "#" },
+                        new MenuItem { Text = "Link in level 2", Icon = "link", HRef = "#" },
+                    }
+                }
+            });
         }
 
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
