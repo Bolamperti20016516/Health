@@ -3,29 +3,34 @@
 <ul class="sidebar-menu" data-widget="tree">
     <!-- Optionally, you can add icons to the links -->
     @foreach (var menuItem in Menu)
+    {
+        switch (menuItem)
         {
-            switch (menuItem)
-            {
-                case MenuItem singleMenuItem:
-                    <li><a href="@singleMenuItem.HRef"><i class="fa fa-@(singleMenuItem.Icon)"></i> <span>@singleMenuItem.Text</span></a></li>
-                break;
+            case MenuItem singleMenuItem:
+                <li>
+                    <a href="@singleMenuItem.HRef">
+                        <i class="fa fa-@(singleMenuItem.Icon)"></i> 
+                        <span>@singleMenuItem.Text</span>
+                    </a>
+                </li>
+            break;
 
-                case SubMenu subMenu:
-                    <li class="treeview">
-                        <a href="#">
-                            <i class="fa fa-link"></i> <span>@subMenu.Text</span>
-                            <span class="pull-right-container">
-                                <i class="fa fa-angle-left pull-right"></i>
-                            </span>
-                        </a>
-                        <ul class="treeview-menu">
-                            @foreach (var subMenuItem in subMenu.Items)
-                            {
-                                <li><a href="@subMenuItem.HRef">@subMenuItem.Text</a></li>
-                            }
-                        </ul>
-                    </li>
-                    break;
-            }
+            case SubMenu subMenu:
+                <li class="treeview">
+                    <a href="#">
+                        <i class="fa fa-link"></i> <span>@subMenu.Text</span>
+                        <span class="pull-right-container">
+                            <i class="fa fa-angle-left pull-right"></i>
+                        </span>
+                    </a>
+                    <ul class="treeview-menu">
+                        @foreach (var subMenuItem in subMenu.Items)
+                        {
+                            <li><a href="#">@subMenuItem.Text</a></li>
+                        }
+                    </ul>
+                </li>
+                break;
+        }
     }
 </ul>

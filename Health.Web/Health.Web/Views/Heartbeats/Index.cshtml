@@ -10,7 +10,7 @@
 <script>
 
     $(document).ready(function () {
-        var baseUrl = "@Url.Content("~/api/heartbeat/")";
+        var baseUrl = "@Url.Content("~/api/heartbeats/")";
 
         $("#grid").kendoGrid({
             dataSource: {
@@ -34,7 +34,7 @@
                         fields: {
                             id: { type: "number" },
                             timestamp: { type: "date" },
-                            deviceId: { type: "number" },
+                            deviceId: { type: "string" },
                             value: { type: "number" }
                         }
                     }
@@ -43,15 +43,17 @@
             scrollable: true,
             sortable: true,
             filterable: true,
-            editable: "inline",
+            //editable: "inline",
             columns: [
                 { command: [ "edit", "destroy" ], title: " ", width: 180 },
                 "id",
-                { field: "name", title: "Name" }
+                { field: "timestamp", title: "Date/Time", format: "{0:dd/MM/yyyy HH:mm:ss.fff}" },
+                { field: "deviceId", title: "Device" },
+                { field: "value", title: "Value" }
             ],
-            toolbar: [
-                "create"
-            ],
+            //toolbar: [
+            //    "create"
+            //],
             saveChanges: function (e) {
                 // Refresh della grid per avere gli ID.
                 e.sender.one("dataBound", function () {

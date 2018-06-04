@@ -4,6 +4,6 @@ using Microsoft.AspNetCore.Mvc;
 namespace Health.Web.Controllers.Services
 {
     [Route("api/[controller]")]
-    public class HeartbeatController : CrudController<Heartbeat, int>
+    public class HeartbeatsController : CrudController<Heartbeat, int>
     { }
 }

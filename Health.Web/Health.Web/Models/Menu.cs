@@ -3,7 +3,9 @@
 namespace Health.Web.Models
 {
     public interface IMenuItem
-    { }
+    {
+        string Text { get; set; }
+    }
 
     public class MenuItem : IMenuItem
     {
@@ -18,6 +20,6 @@ namespace Health.Web.Models
     {
         public string Text { get; set; }
 
-        public IEnumerable<MenuItem> Items { get; set; }
+        public IEnumerable<IMenuItem> Items { get; set; }
     }
 }
